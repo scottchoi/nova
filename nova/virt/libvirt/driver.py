@@ -3083,7 +3083,7 @@ class LibvirtDriver(driver.ComputeDriver):
         #            here b/c it doesn't capture the entire XML
         #            description
         xml_doc = etree.fromstring(old_xml_str)
-
+        
         # change over listen addresses
         for dev in xml_doc.findall('./devices/graphics'):
             gr_type = dev.get('type')
@@ -3091,14 +3091,16 @@ class LibvirtDriver(driver.ComputeDriver):
             if gr_type == 'vnc':
                 if listen_tag is not None:
                     listen_tag.set('address', listen_addrs['vnc'])
+                    LOG.info("listen_tag : %s",listen_addrs['vnc'])
                 if dev.get('listen') is not None:
                     dev.set('listen', listen_addrs['vnc'])
+                    LOG.info("listen : %s",listen_addrs['vnc'])
             elif gr_type == 'spice':
                 if listen_tag is not None:
                     listen_tag.set('address', listen_addrs['spice'])
                 if dev.get('listen') is not None:
                     dev.set('listen', listen_addrs['spice'])
-
+          
         return etree.tostring(xml_doc)
 
     def _live_migration(self, ctxt, instance_ref, dest, post_method,
@@ -3130,10 +3132,11 @@ class LibvirtDriver(driver.ComputeDriver):
             logical_sum = reduce(lambda x, y: x | y, flagvals)
 
             dom = self._lookup_by_name(instance_ref["name"])
-
+             
+            LOG.info(_("test testes "))
             pre_live_migrate_data = migrate_data['pre_live_migration_result']
             listen_addrs = pre_live_migrate_data['graphics_listen_addrs']
-
+            LOG.debug("test fafdsfa get addd %s", listen_addrs)
             migratable_flag = getattr(libvirt, 'VIR_DOMAIN_XML_MIGRATABLE',
                                       None)
 
@@ -3143,22 +3146,24 @@ class LibvirtDriver(driver.ComputeDriver):
                            ' will not work without setting the graphics (Spice'
                            ' and/or VNC) listen addresses on the compute nodes'
                            ' to "0.0.0.0".'))
-
-                dom.migrateToURI(CONF.libvirt.live_migration_uri % dest,
+		LOG.info(_("test without migratabl:"))
+                dom.migrateToURI(CONF.live_migration_uri % dest,
                                  logical_sum,
                                  None,
-                                 CONF.libvirt.live_migration_bandwidth)
+                                 CONF.live_migration_bandwidth)
             else:
+                LOG.info(_("migratable_Flag is set"))
                 old_xml_str = dom.XMLDesc(migratable_flag)
                 new_xml_str = self._correct_listen_addr(old_xml_str,
                                                         listen_addrs)
-
-                dom.migrateToURI2(CONF.libvirt.live_migration_uri % dest,
+		
+		LOG.info("new_xml_str: %s", new_xml_str)
+                dom.migrateToURI2(CONF.live_migration_uri % dest,
                                   None,
                                   new_xml_str,
                                   logical_sum,
                                   None,
-                                  CONF.libvirt.live_migration_bandwidth)
+                                  CONF.live_migration_bandwidth)
 
         except Exception as e:
             with excutils.save_and_reraise_exception():
@@ -3199,16 +3204,19 @@ class LibvirtDriver(driver.ComputeDriver):
                                           instance['project_id'])
 
     def pre_live_migration(self, context, instance, block_device_info,
-                           network_info, migrate_data=None):
+                           network_info, disk_info, migrate_data=None):
         """Preparation live migration."""
         # Steps for volume backed instance live migration w/o shared storage.
         is_shared_storage = True
         is_volume_backed = False
         is_block_migration = True
+	instance_relative_path = None
         if migrate_data:
             is_shared_storage = migrate_data.get('is_shared_storage', True)
             is_volume_backed = migrate_data.get('is_volume_backed', False)
             is_block_migration = migrate_data.get('block_migration', True)
+	    instnace_relative_path = migrate_data.get('instance_relative_path')
+
 
         if is_volume_backed and not (is_block_migration or is_shared_storage):
 

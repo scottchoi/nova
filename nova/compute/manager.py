@@ -3094,6 +3094,12 @@ class ComputeManager(manager.SchedulerDependentManager):
                     dest_check_data)
         if dest_check_data and 'migrate_data' in dest_check_data:
             migrate_data.update(dest_check_data['migrate_data'])
+
+
+        for key,value in migrate_data.iteritems() :
+            LOG.info("key: %s value: %s",key,value)
+
+
         return migrate_data
 
     @exception.wrap_exception(notifier=notifier, publisher_id=publisher_id())
@@ -3138,19 +3144,24 @@ class ComputeManager(manager.SchedulerDependentManager):
                             context, instance, bdms=bdms)
 
         network_info = self._get_instance_nw_info(context, instance)
-
-        # TODO(tr3buchet): figure out how on the earth this is necessary
+        self._notify_about_instance_usage(
+             context, instance, "live_migration.pre.start",
+             network_info=network_info)
+       
+	pre_live_migration_data = self.driver.pre_live_migration(context, 
+				       instance,
+                                       block_device_info,
+                                       self._legacy_nw_info(network_info),
+				       disk,
+                                       migrate_data)
+        
+	# TODO(tr3buchet): figure out how on the earth this is necessary
         fixed_ips = network_info.fixed_ips()
         if not fixed_ips:
             raise exception.FixedIpNotFoundForInstance(
                                        instance_uuid=instance['uuid'])
 
-        self.driver.pre_live_migration(context, instance,
-                                       block_device_info,
-                                       self._legacy_nw_info(network_info),
-                                       migrate_data)
-
-        # NOTE(tr3buchet): setup networks on destination host
+                # NOTE(tr3buchet): setup networks on destination host
         self.network_api.setup_networks_on_host(context, instance,
                                                          self.host)
 
@@ -3166,6 +3177,12 @@ class ComputeManager(manager.SchedulerDependentManager):
         # Preparation for block migration
         if block_migration:
             self.driver.pre_block_migration(context, instance, disk)
+
+	self._notify_about_instance_usage(
+             context, instance, "live_migration.pre.end",
+             network_info=network_info)
+
+	return pre_live_migration_data 
 
     def live_migration(self, context, dest, instance,
                        block_migration=False, migrate_data=None):
@@ -3184,8 +3201,13 @@ class ComputeManager(manager.SchedulerDependentManager):
             else:
                 disk = None
 
-            self.compute_rpcapi.pre_live_migration(context, instance,
-                    block_migration, disk, dest, migrate_data)
+            #pre_migration_data = self.compute_rpcapi.pre_live_migration(
+	    # 	context, instance,
+            #    block_migration, disk, dest, migrate_data)
+	    pre_migration_data = self.compute_rpcapi.pre_live_migration(
+		context, instance,
+		block_migration, disk, dest, migrate_data)
+            migrate_data['pre_live_migration_result'] = pre_migration_data
 
         except Exception:
             with excutils.save_and_reraise_exception():
