@@ -489,7 +489,7 @@ class LibvirtNFSVolumeDriver(LibvirtBaseVolumeDriver):
 
         try:
             utils.execute('umount', mount_path, run_as_root=True)
-        except processutils.ProcessExecutionError as exc:
+        except exception.ProcessExecutionError as exc:
             if 'target is busy' in exc.message:
                 LOG.debug(_("The NFS share %s is still in use."), export)
             else:
