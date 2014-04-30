@@ -244,6 +244,13 @@ class UsageInfoTestCase(test.TestCase):
         self.flags(compute_driver='nova.virt.fake.FakeDriver',
                    notification_driver=[test_notifier.__name__],
                    network_manager='nova.network.manager.FlatManager')
+
+        def fake_get_pre_defined_network(pre_defined_network=None):
+            return 'fake.dev.dmz'
+
+        self.stubs.Set(nova.network, 'get_pre_defined_network',
+                       fake_get_pre_defined_network)
+
         self.compute = importutils.import_object(CONF.compute_manager)
         self.user_id = 'fake'
         self.project_id = 'fake'
@@ -372,7 +379,6 @@ class UsageInfoTestCase(test.TestCase):
         image_ref_url = "%s/images/1" % glance.generate_glance_url()
         self.assertEquals(payload['image_ref_url'], image_ref_url)
 
-    @test.skip("skipping test")
     def test_notify_about_instance_usage(self):
         instance_id = self._create_instance()
         instance = db.instance_get(self.context, instance_id)

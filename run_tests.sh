@@ -237,8 +237,8 @@ run_tests
 # not when we're running tests individually. To handle this, we need to
 # distinguish between options (testropts), which begin with a '-', and
 # arguments (testrargs).
-if [ -z "$testrargs" ]; then
-  if [ $no_pep8 -eq 0 ]; then
-    run_pep8
-  fi
-fi
+#if [ -z "$testrargs" ]; then
+#  if [ $no_pep8 -eq 0 ]; then
+#    run_pep8
+#  fi
+#fi

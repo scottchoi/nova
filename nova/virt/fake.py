@@ -166,7 +166,7 @@ class FakeDriver(driver.ComputeDriver):
 
     def migrate_disk_and_power_off(self, context, instance, dest,
                                    instance_type, network_info,
-                                   block_device_info=None):
+                                   block_device_info=None, resize_data=None):
         pass
 
     def finish_revert_migration(self, instance, network_info,
@@ -369,7 +369,7 @@ class FakeDriver(driver.ComputeDriver):
 
     def finish_migration(self, context, migration, instance, disk_info,
                          network_info, image_meta, resize_instance,
-                         block_device_info=None):
+                         block_device_info=None, resize_data=None):
         return
 
     def confirm_migration(self, migration, instance, network_info):

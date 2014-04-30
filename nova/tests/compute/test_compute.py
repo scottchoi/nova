@@ -114,7 +114,19 @@ class BaseTestCase(test.TestCase):
                    network_manager='nova.network.manager.FlatManager')
         fake.set_nodes([NODENAME])
         self.flags(use_local=True, group='conductor')
+
+        def fake_get_pre_defined_network(pre_defined_network=None):
+            return 'fake.dev.dmz'
+
+        self.stubs.Set(nova.network, 'get_pre_defined_network',
+                       fake_get_pre_defined_network)
+
         self.compute = importutils.import_object(CONF.compute_manager)
+
+        def fake_prep_networks(context, instance, requested_networks):
+            return requested_networks
+
+        self.stubs.Set(self.compute, '_prep_networks', fake_prep_networks)
 
         # override tracker with a version that doesn't need the database:
         fake_rt = fake_resource_tracker.FakeResourceTracker(self.compute.host,
@@ -3248,8 +3260,8 @@ class ComputeTestCase(BaseTestCase):
              "args": {'instance': inst_ref, 'block_migration': False},
              "version": compute_rpcapi.ComputeAPI.BASE_RPC_API_VERSION},
             None)
-        self.mox.StubOutWithMock(self.compute.driver, 'unplug_vifs')
-        self.compute.driver.unplug_vifs(inst_ref, [])
+        # self.mox.StubOutWithMock(self.compute.driver, 'unplug_vifs')
+        # self.compute.driver.unplug_vifs(inst_ref, [])
         rpc.call(c, 'network', {'method': 'setup_networks_on_host',
                                 'args': {'instance_id': inst_id,
                                          'host': self.compute.host,
@@ -3296,8 +3308,8 @@ class ComputeTestCase(BaseTestCase):
                                                      'fake_power_state')
 
     def _finish_post_live_migration_at_destination(self):
-        self.compute.network_api.setup_networks_on_host(self.admin_ctxt,
-                mox.IgnoreArg(), self.compute.host)
+        # self.compute.network_api.setup_networks_on_host(self.admin_ctxt,
+        #         mox.IgnoreArg(), self.compute.host)
 
         self.mox.ReplayAll()
 
