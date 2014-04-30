@@ -1604,7 +1604,10 @@ class ComputeManager(manager.SchedulerDependentManager):
                 context, instance, self.host)
             #this is double tapping
             network_info = self._get_instance_nw_info(context, instance)
-            self.network_api.migrate_instance_finish(context,instance,"rebuild")
+            migration = {'source_compute': instance['host'],
+                         'dest_compute': self.host, }
+            self.network_api.migrate_instance_finish(context,instance,
+                                                     migration)
 
             if bdms is None:
                 bdms = self.conductor_api.\
@@ -3272,7 +3275,7 @@ class ComputeManager(manager.SchedulerDependentManager):
             self.driver.destroy(instance_ref,
                                 self._legacy_nw_info(network_info),
                                 self._get_instance_volume_block_device_info(ctxt, instance_ref),
-                                destroy_disk=True)
+                                destroy_disks=True)
            # self.driver.unplug_vifs(instance_ref,
            #                         self._legacy_nw_info(network_info))
 

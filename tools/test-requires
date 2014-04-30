@@ -11,7 +11,7 @@ psycopg2
 pep8==1.3.3
 pyflakes
 pylint==0.25.2
-python-subunit
+python-subunit<=0.0.15
 sphinx>=1.1.2
 testrepository>=0.0.13
-testtools>=0.9.27
+testtools<=0.9.34

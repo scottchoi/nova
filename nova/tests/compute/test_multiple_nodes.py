@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 """Tests for compute service with multiple compute nodes."""
+import nova
 
 from oslo.config import cfg
 
@@ -79,6 +80,13 @@ class MultiNodeComputeTestCase(BaseTestCase):
     def setUp(self):
         super(MultiNodeComputeTestCase, self).setUp()
         self.flags(compute_driver='nova.virt.fake.FakeDriver')
+
+        def fake_get_pre_defined_network(pre_defined_network=None):
+            return 'fake.dev.dmz'
+
+        self.stubs.Set(nova.network, 'get_pre_defined_network',
+                       fake_get_pre_defined_network)
+
         self.compute = importutils.import_object(CONF.compute_manager)
         self.flags(use_local=True, group='conductor')
         self.conductor = self.start_service('conductor',
@@ -134,7 +142,6 @@ class MultiNodeComputeTestCase(BaseTestCase):
         self.assertEqual(sorted(self.compute._resource_tracker_dict.keys()),
                          ['A', 'B', 'C'])
 
-    @test.skip("skipping test")
     def test_compute_manager_removes_deleted_node(self):
         ctx = context.get_admin_context()
         fake.set_nodes(['A', 'B'])
